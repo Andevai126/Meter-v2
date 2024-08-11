@@ -73,6 +73,7 @@ void loop() {
 // GPS implementation
 // write fun stuff to sd?
 // Maybe create a random function for the 5 countdown titles so it picks one of the 5
+// Ctrl+Shift+F with 'TODO'
 
 // Power saving and sleep modes
 

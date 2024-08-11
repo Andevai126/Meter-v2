@@ -361,7 +361,7 @@ String addToQueue(String filter, bool atPlayerIndex=false, bool tts=false) {
     DEBUGF("paths: <%s>\nnPaths: <%d>\n", paths.c_str(), nPaths);
 
     // Filter didn't correspond to any files or directories
-    if (nPaths == 0) { return "";}
+    if (nPaths == 0) { return ""; }
 
     // Open file
     queue = SD.open("/q.txt", O_RDWR);
@@ -444,7 +444,7 @@ void playAudio(String filter) {
 
 // Add songs according to filter to end of queue
 void queueAudio(String filter) {
-   addToQueue(filter, false);
+   addToQueue(filter);
 }
 
 // Move player index by number
