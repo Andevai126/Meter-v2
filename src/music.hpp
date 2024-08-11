@@ -269,7 +269,6 @@ String getPathOfPlayerIndex() {
 
 // Shuffle all titles in queue present after playerIndex
 bool shuffleQueue() {
-    // TODO not yet tested!
     // Open file
     queue = SD.open("/q.txt", O_RDWR);
     // Read first four bytes
@@ -461,17 +460,22 @@ void moveAudio(bool positive, int number = 1) {
     }
 }
 
-void stopAudio() {
-    audioPaused = true;
+void setPaused(bool doit) {
+    audioPaused = doit;
+}
+
+void togglePaused() {
+    audioPaused = !audioPaused;
+    DEBUGF("audioPaused is now: %d\n", audioPaused);
 }
 
 void setAutoNext(bool doit) {
     audioAutoNext = doit;
 }
 
-void pauseAudio() {
-    audioPaused = !audioPaused;
-    DEBUGF("audioPaused is now: %d\n", audioPaused);
+void toggleAutoNext() {
+    audioAutoNext = !audioAutoNext;
+    DEBUGF("audioAutoNext is now: %d\n", audioAutoNext);
 }
 
 float volumeScaler = 1;

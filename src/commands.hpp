@@ -231,7 +231,7 @@ void runIndex(char* message) {
 
 // Stops playing audio and clear index files
 void runStop(char* message) {
-    stopAudio();
+    setPaused(true);
 }
 
 //Plays audio. Either all mp3 or specified by 'filter'
@@ -258,7 +258,7 @@ void runQ(char* message) {
 
 // Play or Pause in between (does not pause the leds / nonblocking)
 void runPause(char* message) {
-    pauseAudio();
+    togglePaused();
 }
 
 // Go to next audio file
@@ -285,7 +285,7 @@ void runNext(char* message) {
 void runAutonext(char* message) {  
     if (strlen(message) <= strlen("Autonext ")) {
         DEBUGLN(F("No argument specified"));
-        setAutoNext(!audioAutoNext);
+        toggleAutoNext();
     } else {
         // Get argument and convert to String for ease of comparison
         String arg = message+strlen("Autonext ");
@@ -376,7 +376,7 @@ void runFFT(char* message) {
 // Clear both audio and leds
 void runClear(char* message) {
     resetPatterns();
-    stopAudio();
+    setPaused(true);
 }
 
 // --- GPS ---
