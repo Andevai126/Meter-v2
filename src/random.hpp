@@ -13,9 +13,18 @@ void setShuffledIntArray(int* array, int size) {
     std::shuffle(array, array + size, std::default_random_engine(std::time(nullptr)));
 }
 
-void shuffleCharPointerArray(char** array, int size) {
+void shuffleIntArray(int* array, int size) {
     std::shuffle(array, array + size, std::default_random_engine(std::time(nullptr)));
 }
+
+// Can't use std::shuffle, because it can't handle VLA's
+void customShuffleStringArray(String* array, int size) {
+    for (int i = size - 1; i > 0; --i) {
+        int j = rand() % (i + 1);
+        std::swap(array[i], array[j]);
+    }
+}
+
 
 // int randomGen(int size) {
 //     return std::rand() % size;

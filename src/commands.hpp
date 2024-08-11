@@ -154,12 +154,8 @@ void runAddD(char* message) {
     }
 }
 
-// message = "Disco 28459899230254"
-// numberstring = "28459899230254"
-// numberstring = "28459899\030254"
-// number = 28459899
-
 //--- Games and LEDS ---
+
 // Helper function
 void startPattern(char* numberString, int index) {
     // Cap the length of the number on 8 chars
@@ -193,7 +189,7 @@ void runBattery(char* message) {
     resetPatterns();
     patterns[BATTERY].input = percentage;
     patterns[BATTERY].running = true;
-    // nutt.say((double)percentage, "%");
+    // nutt.say((double)percentage, "%"); TODO
 }
 
 void runDisco(char* message) {
@@ -287,20 +283,21 @@ void runNext(char* message) {
 
 // Activate autonext
 void runAutonext(char* message) {  
-    // Cap the length of the first argument after 'Autonext ' at 3 chars
-    if (strlen(message+strlen("Autonext ")) > 3) {
-        message[strlen("Autonext ")+3] = '\0';
+    if (strlen(message) <= strlen("Autonext ")) {
+        DEBUGLN(F("No argument specified"));
+        setAutoNext(!audioAutoNext);
+    } else {
+        // Get argument and convert to String for ease of comparison
+        String arg = message+strlen("Autonext ");
+        // Multiple options are allowed
+        if (arg.indexOf("y") != -1 || arg.indexOf("Y") != -1 || arg.indexOf("t") != -1 || arg.indexOf("T") != -1) {
+            setAutoNext(true);
+            DEBUGLN(F("Changed Autonext to: true"));
+        } else if (arg.indexOf("n") != -1 || arg.indexOf("N") != -1 || arg.indexOf("f") != -1 || arg.indexOf("F") != -1) {
+            setAutoNext(false);
+            DEBUGLN(F("Changed Autonext to: false"));
+        }
     }
-    // Get argument and convert to String for ease of comparison
-    String arg = message+strlen("Autonext ");
-    // Multiple options are allowed
-    if (arg.indexOf("y") != -1 || arg.indexOf("Y") != -1 || arg.indexOf("t") != -1 || arg.indexOf("T") != -1) {
-        setAutoNext(true);
-        DEBUGLN(F("Changed Autonext to: true"));
-    } else if (arg.indexOf("n") != -1 || arg.indexOf("N") != -1 || arg.indexOf("f") != -1 || arg.indexOf("F") != -1) {
-        setAutoNext(false);
-        DEBUGLN(F("Changed Autonext to: false"));
-    }    
 }
 
 // Go to previous audio file
@@ -345,8 +342,7 @@ void runVolume(char* message) {
 
 // Shuffle titles
 void runShuffle(char* message) {
-    // TODO
-    // shuffleQueue();
+    shuffleQueue();
 }
 
 

@@ -39,9 +39,9 @@ File32 root;
 String titles;
 int nTitles = 0;
 
-bool audioPaused = false;
-bool audioFinished = false;
-bool audioAutoNext = false;
+bool audioPaused = true;
+bool audioFinished = true;
+bool audioAutoNext = true;
 
 // Pins for speaker
 #define DAC_AMP_LRC 19
@@ -268,47 +268,50 @@ String getPathOfPlayerIndex() {
 }
 
 // Shuffle all titles in queue present after playerIndex
-// bool shuffleQueue() {
-//     // TODO not yet tested!
-//     // Open file
-//     queue = SD.open("/q.txt", O_RDWR);
-//     // Read first four bytes
-//     uint16_t nPaths = queue.read() << 8 | queue.read();
-//     uint16_t playerIndex = queue.read() << 8 | queue.read();
+bool shuffleQueue() {
+    // TODO not yet tested!
+    // Open file
+    queue = SD.open("/q.txt", O_RDWR);
+    // Read first four bytes
+    uint16_t nPaths = queue.read() << 8 | queue.read();
+    uint16_t playerIndex = queue.read() << 8 | queue.read();
+    uint16_t shuffleStartIndex = playerIndex+1;
 
-//     // Can be shuffled
-//     if (nPaths == 0 || nPaths == 1 || playerIndex >= nPaths-1) {
-//         queue.close();
-//         return false;
-//     }
+    // Can be shuffled
+    if (nPaths == 0 || nPaths == 1 || shuffleStartIndex >= nPaths-1) {
+        queue.close();
+        return false;
+    }
 
-//     // Move reader pointer to current title
-//     for (int i = 0; i < playerIndex; i++) {
-//         queue.find('\n');
-//     }
+    // Move reader pointer past current title
+    for (int i = 0; i < shuffleStartIndex; i++) {
+        queue.find('\n');
+    }
 
-//     // Read titles after playerIndex
-//     char* titles[nPaths-playerIndex];
-//     for (int i = 0; i < nPaths-playerIndex; i++) {
-//         titles[i] = (char*)(queue.readStringUntil('\n') + "\n").c_str();
-//     }
+    // Read titles after playerIndex
+    String titlesAfter[nPaths-shuffleStartIndex];
+    for (int i = 0; i < nPaths-shuffleStartIndex; i++) {
+        titlesAfter[i] = queue.readStringUntil('\n') + "\n";
+    }
 
-//     // Shuffle titles
-//     shuffleCharPointerArray(titles, nPaths-playerIndex);
+    // Shuffle titles
+    customShuffleStringArray(titlesAfter, nPaths-shuffleStartIndex);
 
-//     // Move reader pointer to current title
-//     for (int i = 0; i < playerIndex; i++) {
-//         queue.find('\n');
-//     }
+    // Move reader pointer to current title
+    queue.seekSet(0);
+    for (int i = 0; i < shuffleStartIndex; i++) {
+        queue.find('\n');
+    }
 
-//     // Overwrite titles with shuffled titles
-//     for (int i = 0; i < nPaths-playerIndex; i++) {
-//         queue.print(titles[i]);
-//     }
+    // Overwrite titles with shuffled titles
+    for (int i = 0; i < nPaths-shuffleStartIndex; i++) {
+        queue.print(titlesAfter[i]);
+    }
 
-//     queue.close();
-//     return true;
-// }
+    queue.close();
+    DEBUGLN("Shuffle complete");
+    return true;
+}
 
 // Updates playerIndex, returns if change occurred
 bool movePlayerIndex(int change) {
@@ -331,9 +334,14 @@ bool movePlayerIndex(int change) {
     }
 
     // Can playerIndex become to large 
-    if (playerIndexOld+change >= nPaths ) {
+    if (playerIndexOld+change >= nPaths) {
+        // Set player index to zero
+        queue.seekSet(2);
+        queue.write(uint8_t(0));
+        queue.write(uint8_t(0));
+
         queue.close();
-        return false;
+        return true;
     }
     
     // Update player index
@@ -449,6 +457,7 @@ void moveAudio(bool positive, int number = 1) {
         currentlyPlaying = SD.open(path);
         copier.begin();
         audioFinished = false;
+        audioPaused = false;
     }
 }
 

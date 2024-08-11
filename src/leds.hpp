@@ -549,7 +549,7 @@ bool disco(int givenTime) {
 		}
 
 		// Shuffle possible circles
-		std::shuffle(std::begin(possibleCircles), std::end(possibleCircles), std::default_random_engine(std::time(nullptr)));
+		shuffleIntArray(possibleCircles, NUM_CIRCLES-numParticles);
 
 		// For each particle
 		for (int i = 0; i < numParticles; i++) {

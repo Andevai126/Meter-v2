@@ -70,9 +70,7 @@ void loop() {
 
 // --- TODO (options/ideas) ---
 // Text to speach (tts) - upgrade (english and dutch folder? select language?)
-// autoNext loops?  // moveAudio loops back to beginning?
 // GPS implementation
-// Shuffle !
 // write fun stuff to sd?
 // Maybe create a random function for the 5 countdown titles so it picks one of the 5
 
