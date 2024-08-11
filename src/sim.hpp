@@ -1,11 +1,9 @@
 // Possible matches
 const char* SMStemplateSim = "\r\n+CMTI: \"SM\",";
 const char* SMStemplatePhone = "+CMTI: \"ME\",";
-// const char* CALLtemplate = "+CLIP: \"";
 
 
 // Some constants
-// const uint16_t maxLenNotification = 64;
 const uint16_t maxLenData = 256;
 const uint16_t maxLenTelNumber = 16;
 const uint16_t maxNumberOfSMS = 20;
@@ -48,7 +46,7 @@ bool parseMessage(const char* message, char* telNumberBuffer, char* dataBuffer) 
 
 // Delete all messages in SM and ME storage
 void deleteAllMessages() {
-    DEBUGLN(sendAT("AT+CMGD=0,4"));
+    DEBUGLN(sendAT(F("AT+CMGD=0,4")));
 }
 
 
@@ -83,7 +81,6 @@ void simHandler() {
             // Get message
             std::string atcommand = "AT+CMGR=" + std::to_string(index);
             String message = sendAT(atcommand.c_str());
-            // DEBUGF("Message: %s\n", message);
             
             // Get telephone number and data
             char telNumber[maxLenTelNumber];
@@ -104,20 +101,6 @@ void simHandler() {
                     break;
                 }
             }
-
-        // Notification is incoming call
-        // } else if (strncmp(notification, CALLtemplate, strlen(CALLtemplate)) == 0) {
-        //     // Set char after telephone number to null char
-        //     notification[strlen(CALLtemplate)+12] = '\0';
-            
-        //     // Check if telephone number is present in stored telephone numbers
-        //     if (isAllowed((char*)(notification+strlen(CALLtemplate)), ALLOW_WHITELIST)) {
-        //         ATSerial->printf("ATA\r\n");
-        //         DEBUGLN(F("Accepted incoming call"));
-        //     } else {
-        //         ATSerial->printf("ATH0\r\n");
-        //         DEBUGLN(F("Declined incoming call"));
-        //     }
             
         // If multiple SMS are send before SIM7070G is turned on, SMS could overflow into phone storage
         } else if (notification.indexOf(SMStemplatePhone) != -1) {
@@ -127,7 +110,7 @@ void simHandler() {
         // No match for notification found
         } else {
             // Print error
-            DEBUGLN("No match found");
+            DEBUGLN(F("No match found"));
         }
     }
 }

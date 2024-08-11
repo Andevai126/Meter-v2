@@ -40,10 +40,11 @@ void readySim() {
     DEBUGLN(sendAT(F("AT+CPIN?")));
     // Check if anything is needed
     String cpinCheck = sendAT(F("AT+CPIN?"));
-    // Never happens, send PUK
+    // Only needed when switching devices, send PUK
     if (cpinCheck.indexOf(F("SIM PUK")) != -1) {
         DEBUGLN(F("Puk requested"));
         DEBUGLN(sendAT(F("AT+CPIN=8931440301472074259")));
+        // Recheck
         cpinCheck = sendAT(F("AT+CPIN?"));
         DEBUGLN(cpinCheck);
     }
@@ -109,17 +110,3 @@ T getATarg(String AT, int index = 0) {
     ss >> arg;
     return arg;
 }
-
-// Set error reporting to verbose
-// DEBUGLN(sendAT(F("AT+CMEE=2")));
-
-// Delete all messages in SM and ME storage
-// DEBUGLN(sendAT("AT+CMGD=0,4"));
-
-// Turn off echo
-// DEBUGLN(sendAT("ATE0"));
-
-// Turn on GNSS receiver
-
-// AT+CSQ
-// AT+CGNSPWR?

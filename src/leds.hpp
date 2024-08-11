@@ -6,10 +6,6 @@
 
 #define FASTLED_INTERNAL			// Prevents warnings from FastLED during compiling
 #include <FastLED.h>				// Led driver
-#include <cstdlib>					// For rand() and srand()
-#include <ctime>					// For time()
-#include <numeric>   				// For iota()
-#include <random>    				// For default_random_engine()
 
 // Led strip characteristics
 #define NUM_LEDS_PER_CIRCLE 14		// 14  // 2  // 4
@@ -94,9 +90,6 @@ void ledsSetup() {
 
     // Setup Multioutput
     multi_output.add(fft);
-
-	// Seed the random number generator
-	std::srand(static_cast<unsigned>(std::time(nullptr)));
 }
 
 // Execute pattern functions that are turned on
@@ -125,11 +118,6 @@ void resetPatterns() {
 }
 
 void fadeall(uint8_t scaledown) { for(int i = 0; i < NUM_LEDS; i++) { leds[i].nscale8(scaledown); } }
-
-// int randomGen(int size) {
-//     std::srand(static_cast<unsigned>(std::time(nullptr)));  // Seed the random number generator
-//     return std::rand() % size;
-// }
 
 bool rainbow(int givenNumLoop) {
 
@@ -285,8 +273,7 @@ bool roulette(int givenNumLoop) {
 		FastLED.setBrightness(10);
 
 		// Create shuffled array containing numbers 0 to NUM_CIRCLES-1
-		std::iota(std::begin(possibleNumbers), std::end(possibleNumbers), 0);
-		std::shuffle(std::begin(possibleNumbers), std::end(possibleNumbers), std::default_random_engine(std::time(nullptr)));
+		setShuffledIntArray(possibleNumbers, NUM_CIRCLES);
 
 		// Choose random amount of rounds
 		numRounds = (rand()%6)+4;
@@ -401,13 +388,9 @@ bool charge(int givenTime) { // givenTime is in seconds
 			}
 			i = 0;
 			j++;
-			// DEBUG('\n');
-			// DEBUG(F("Time to wait: "));
 		} else {
 			i = 0;
 			j++;
-			// DEBUG('\n');
-			// DEBUG(F("Time to wait: "));
 			return false;
 		}
 		FastLED.show();
@@ -417,8 +400,6 @@ bool charge(int givenTime) { // givenTime is in seconds
 		// Create range from 0 to 1 over number of segments
 		double y = (double(i))/(double(segments));
 		timeToWait = max(timeToWait*(-0.5*atan(j*y)+1), 20.0);
-		// DEBUG(timeToWait);
-		// DEBUG('\t');
 		return false;
 	}
 
@@ -518,7 +499,6 @@ bool disco(int givenTime) {
 
 	// First time this function is called
 	if (recordedTime == 0) {
-		// DEBUGLN(F("Entered disco"));
 		// Record time
 		recordedTime = millis();
 		firstRecordedTime = recordedTime;
@@ -528,14 +508,13 @@ bool disco(int givenTime) {
 		// ------- Seed particles ------- //
 		int possibleCircles[NUM_CIRCLES];
 		// Create shuffled array containing numbers 0 to NUM_CIRCLES-1
-		std::iota(std::begin(possibleCircles), std::end(possibleCircles), 0);
-		std::shuffle(std::begin(possibleCircles), std::end(possibleCircles), std::default_random_engine(std::time(nullptr)));
+		setShuffledIntArray(possibleCircles, NUM_CIRCLES);
 
 		for (int i = 0; i < NUM_CIRCLES; i++)
 		{
 			DEBUGF("%d ", possibleCircles[i]);
 		}
-		DEBUGLN("");
+		DEBUG('\n');
 		// Create starting particles
 		for (int i = 0; i < numParticles; i++) {
 			particles[i].indexCircle = possibleCircles[i];
@@ -548,10 +527,7 @@ bool disco(int givenTime) {
 	}
 
 
-	if (millis() < (firstRecordedTime+min(givenTime, timeCap)*1000)) {
-		// Test
-		// DEBUGLN(F("Here"));
-		
+	if (millis() < (firstRecordedTime+min(givenTime, timeCap)*1000)) {		
 		int possibleCircles[NUM_CIRCLES-numParticles];
 		
 		int index = 0;
@@ -575,16 +551,6 @@ bool disco(int givenTime) {
 		// Shuffle possible circles
 		std::shuffle(std::begin(possibleCircles), std::end(possibleCircles), std::default_random_engine(std::time(nullptr)));
 
-		// Show shuffled possible circles 
-		// DEBUGLN(F("Possible circles: "));
-		// for (int i = 0; i < index; i++) {
-		// 	DEBUGF("%d, ", possibleCircles[i]);
-		// }
-		// DEBUG('\n');
-		
-		// // Test
-		// DEBUGLN(F("Here2"));
-
 		// For each particle
 		for (int i = 0; i < numParticles; i++) {
 			// If its time is over
@@ -596,20 +562,6 @@ bool disco(int givenTime) {
 			}
 		}
 
-		// Show values of all particles
-		// DEBUGLN(F("Values of particles: "));
-		// for (int i = 0; i < numParticles; i++) {
-		// 	DEBUG(F("Particle: endTime:\t"));
-		// 	DEBUG(particles[i].endTime);
-		// 	DEBUG(F("\theu:\t"));
-		// 	DEBUG(particles[i].hue);
-		// 	DEBUG(F("\tindexCircle:\t"));
-		// 	DEBUGLN(particles[i].indexCircle);
-		// }
-		
-		// // Test
-		// DEBUGLN(F("Here3"));
-
 		FastLED.clear();
 		// For each particle
 		for (int i = 0; i < numParticles; i++) {
@@ -619,8 +571,6 @@ bool disco(int givenTime) {
 			}
 		}
 		FastLED.show();
-		// Test	
-		// DEBUGLN(F("Here4"));
 		return false;
 	}
 
@@ -628,7 +578,6 @@ bool disco(int givenTime) {
 	// Program has ended
 	recordedTime = 0;
 	FastLED.clear(true); // reset all led data (leds are off)
-	// DEBUGLN(F("Disco function ended"));
 	return true;
 }
 
@@ -715,12 +664,11 @@ bool vumeter(int notUsed) {
 			bands[i].value = 0;
 		}
 		
-		// Sort frequency magnitudes into bins
-		// Serial.print("Magnitude array:\t");
-
+		
 		// Skip 0Hz and close to 0Hz
 		ptr++;
 		ptr++;
+		// Sort frequency magnitudes into bins
 		for (int i = 2; i < fft.size(); i++) { // fft.size()=512
 
 			*ptr /= volumeScaler; // adjusted with volume change
@@ -757,21 +705,9 @@ bool vumeter(int notUsed) {
 			}
 			ptr++;
 		}
-		// Serial.println("");
-		
-		// DEBUGF("bandValues[12]: %d\n", bandValues[12]);
-
-		// Serial.print("Bins array:\t");
-		// for (int i = 0; i < 13; i++) {
-		//     Serial.printf("%d/", bandValues[i]);
-		// }
-		// Serial.println("");
-
 		// freq magnitude: 0 - x (x is de maximimale magnitude over het hele liedje/alle liedjes)
 		// -> 0 - NUM_LEDS_PER_CIRCLE (maximale waardes voor hoogte band)
 		// -> x/y = NUM_LEDS_PER_CIRCLE (y is een conversie factor) (moet wss een cap op)
-
-		// DEBUGF("Barheights: ");
 
 		FastLED.clearData();
 
@@ -803,9 +739,7 @@ bool vumeter(int notUsed) {
 					colorPeakFFT(i, bands[i].peak);
 				}
 			}
-			// DEBUGF("%d ", barHeight);
 		}
-		// DEBUGF("\n");
 		FastLED.show();	
 		return false;
 	} else {

@@ -94,7 +94,7 @@ void resetTelNumbers() {
 }
 
 
-#define ALLOW_ALL 0 // should we add nAdmins / make possible to add/del admins? (new keyValue pair? and add functions/modify functions)
+#define ALLOW_ALL 0
 #define ALLOW_WHITELIST 1
 #define ALLOW_ADMIN 2
 

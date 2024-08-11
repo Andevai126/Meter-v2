@@ -43,13 +43,6 @@ bool audioPaused = false;
 bool audioFinished = false;
 bool audioAutoNext = false;
 
-// AudioDictionary dictionary(ExampleAudioDictionaryValues);
-// TextToSpeech tts(i2s, decoder, dictionary);
-// NumberToText ntt;
-// TextToSpeech tts(ntt, i2s, decoder, dictionary);
-// NumberUnitToText nutt;
-// TextToSpeech tts(nutt, i2s, decoder, dictionary);
-
 // Pins for speaker
 #define DAC_AMP_LRC 19
 #define DAC_AMP_BCLK 23 
@@ -67,10 +60,10 @@ void musicSetup() {
     // Open SD card to read/write files (try 5 times)
     for (int i = 0; i < 5; i++) {
         if (!SD.begin(spi_cfg)) {
-            DEBUGLN("SD.begin failed");
+            DEBUGLN(F("SD.begin failed"));
             delay(1000);
         } else {
-            DEBUGLN("SD card connected");
+            DEBUGLN(F("SD card connected"));
             break;
         }
     }
@@ -89,13 +82,13 @@ void musicSetup() {
     root = SD.open("/Music");
     searchDirectory(root, "");
     root.close();
-    // Serial.printf("Titles: <%s>\n", titles.c_str());
+    // DEBUGF("Titles: <%s>\n", titles.c_str());
     for (int i = 0; titles.c_str()[i] != '\0'; ++i) {
         if (titles.c_str()[i] == '\n') {
             nTitles++;
         }
     }
-    // Serial.printf("nTitles: <%d>\n", nTitles);
+    // DEBUGF("nTitles: <%d>\n", nTitles);
 
     // Start decoder
     decoder.begin();
@@ -115,7 +108,7 @@ void musicSetup() {
     cfg.pin_data = DAC_AMP_DIN;  // d  din  (sclk) (green)
     i2s.begin(cfg);
 
-    // Testing !!!
+    // TODO Testing !!!
     // currentlyPlaying = SD.open("/TextToSpeech/knowledge.mp3");
     // copier.begin();
     // for (int i = 0; i < 6; i++) { Serial.println(copier.copy()); delay(1000); }
@@ -190,7 +183,7 @@ void printQueue() {
     if (!queue.open("q.txt", O_READ)) {
         SD.errorHalt("opening test.txt for read failed");
     }
-    DEBUGLN("--- printing q.txt ---");
+    DEBUGLN(F("--- printing q.txt ---"));
 
     // Read first four bytes
     uint16_t nPaths = queue.read() << 8 | queue.read();
@@ -199,29 +192,28 @@ void printQueue() {
     DEBUGF("print playerIndex: <%d>\n", playerIndex);
    
     // Read from the file until there's nothing else in it:
-    DEBUG("print paths: <");
+    DEBUG(F("print paths: <"));
     int data;
     while ((data = queue.read()) >= 0) {
         DEBUGWRITE(data);
     }
-    DEBUG(">\n--- printing q.txt done ---\n");
+    DEBUG(F(">\n--- printing q.txt done ---\n"));
     // Close the file:
     queue.close();
 }
 
 // Remove the queue
 void emptyQueue() {
-    // TODO check if player is active? (!audioFinished && !audioPaused)
     if(SD.truncate("/q.txt", 0)) {
         queue = SD.open("/q.txt", O_RDWR);
-        // Write zero at Number of titles and Player position
+        // Write zero at nPaths and playerIndex
         for (int i = 0; i < 4; i++) {
             queue.write(uint8_t(0));
         }
         queue.close();
-        DEBUGLN("Succesfully emptied q.txt");
+        DEBUGLN(F("Succesfully emptied q.txt"));
     } else {
-        DEBUGLN("Failed to empty q.txt");
+        DEBUGLN(F("Failed to empty q.txt"));
     }
 }
 
@@ -254,10 +246,10 @@ uint16_t filterToPaths(String filter, String& pathsA, bool tts=false) {
     }
 
     if (strlen(paths.c_str()) == 0) {
-        DEBUGLN("No matching titles found, maybe check caps or no capital letters?");
+        DEBUGLN(F("No matching titles found, maybe check caps or no capital letters?"));
     }
 
-    // Set the pointer to the new String at the address of pathsA
+    // Set the pointer to the new String at the 'a'ddress of paths'A'
     pathsA = paths;
     return nPaths;
 }
@@ -274,6 +266,49 @@ String getPathOfPlayerIndex() {
     queue.close();
     return path;
 }
+
+// Shuffle all titles in queue present after playerIndex
+// bool shuffleQueue() {
+//     // TODO not yet tested!
+//     // Open file
+//     queue = SD.open("/q.txt", O_RDWR);
+//     // Read first four bytes
+//     uint16_t nPaths = queue.read() << 8 | queue.read();
+//     uint16_t playerIndex = queue.read() << 8 | queue.read();
+
+//     // Can be shuffled
+//     if (nPaths == 0 || nPaths == 1 || playerIndex >= nPaths-1) {
+//         queue.close();
+//         return false;
+//     }
+
+//     // Move reader pointer to current title
+//     for (int i = 0; i < playerIndex; i++) {
+//         queue.find('\n');
+//     }
+
+//     // Read titles after playerIndex
+//     char* titles[nPaths-playerIndex];
+//     for (int i = 0; i < nPaths-playerIndex; i++) {
+//         titles[i] = (char*)(queue.readStringUntil('\n') + "\n").c_str();
+//     }
+
+//     // Shuffle titles
+//     shuffleCharPointerArray(titles, nPaths-playerIndex);
+
+//     // Move reader pointer to current title
+//     for (int i = 0; i < playerIndex; i++) {
+//         queue.find('\n');
+//     }
+
+//     // Overwrite titles with shuffled titles
+//     for (int i = 0; i < nPaths-playerIndex; i++) {
+//         queue.print(titles[i]);
+//     }
+
+//     queue.close();
+//     return true;
+// }
 
 // Updates playerIndex, returns if change occurred
 bool movePlayerIndex(int change) {
@@ -311,7 +346,7 @@ bool movePlayerIndex(int change) {
     return true;
 }
 
-// Add 0, 1 or multiple paths at playerIndex or at the end of the queue
+// Add 0, 1 or multiple paths at the end of the queue or at playerIndex
 String addToQueue(String filter, bool atPlayerIndex=false, bool tts=false) {
     // Convert filter to paths
     String paths;
@@ -341,8 +376,6 @@ String addToQueue(String filter, bool atPlayerIndex=false, bool tts=false) {
         }
         queue.write(playerIndexNew >> 8); // MSB
         queue.write(playerIndexNew); // LSB
-
-        // Serial.printf("playerIndexNew: <%d>\n", playerIndexNew);
         
         // Read left over file
         int8_t data;
@@ -355,20 +388,14 @@ String addToQueue(String filter, bool atPlayerIndex=false, bool tts=false) {
         char* beginP = (char*)queueText.c_str();
         char* endP = beginP;
 
-        // Serial.printf("beginP value: <%d>\n", beginP);
-        // Serial.printf("endP value: <%d>\n", endP);
-
         for (int i = 0; i < playerIndexNew; i++) {
             endP = strstr(endP, "\n");
             endP += 1;
-
-            // Serial.printf("for endP value: <%d>\n", endP);
         }
 
         // Add four because first 4 bytes are not included in beginP
         // because those are already written
         uint32_t newPos = 4 + endP - beginP;
-        // Serial.printf("newPos: <%d>\n", newPos);
         queue.seekSet(newPos);
 
         // Write new paths
@@ -388,16 +415,15 @@ String addToQueue(String filter, bool atPlayerIndex=false, bool tts=false) {
     return firstPath;
 }
 
-// Insert into playlst and start specific audio
+// Insert into queue and start specific audio
 void playAudio(String filter) {
     // Add to queue
-    // char* path = (char*)addToQueue(filter, true).c_str();
     String sPath = addToQueue(filter, true);
     char* path = (char*)sPath.c_str();
 
     // Break when no match for filter was found
     if (*path == '\0') {
-        DEBUGLN("No match for filter");
+        DEBUGLN(F("No match for filter"));
         return;
     }
     
@@ -416,7 +442,7 @@ void queueAudio(String filter) {
 
 // Move player index by number
 void moveAudio(bool positive, int number = 1) {
-    if (movePlayerIndex(number*(positive*2-1))) { // combine move and get, to save time?
+    if (movePlayerIndex(number*(positive*2-1))) { // TODO combine move and get, to save time for TTS?, maybe seperate function?
         String path = getPathOfPlayerIndex();
         DEBUGF("Now playing: \"%s\"\n", path.c_str());
         currentlyPlaying.close();
@@ -452,7 +478,7 @@ void setVolume(float scaler) {
     DEBUGF("Volume: %f\n", scaler);
 }
 
-// Insert into playlist and start specific audio
+// Insert into queue and start specific audio
 void playTTS(char* words) {
     // Add all words with path to queue
     addToQueue(words, true, true);
@@ -467,22 +493,18 @@ void playTTS(char* words) {
     audioFinished = false;
     audioPaused = false;
     
-    DEBUGLN("Starting TTS!");
+    DEBUGLN(F("Starting TTS!"));
 }
 
 void musicHandler() {
     // Pause audio
     if (!audioPaused) {
-        // Serial.printf("copier.available(): %d\n", copier.available());
-        
         // Check if audio is finished
-        if (copier.copy() == 0 && !audioFinished) { // Instead of the copier, check if the i2s is empty?
-            // for (int i = 0; i < 1000; i++) { copier.copy(); Serial.print("."); }
-            // Serial.printf("i2s.peek() last: %d\n", i2s.peek());
-            DEBUGLN("Audio finished");
+        if (copier.copy() == 0 && !audioFinished) {
+            DEBUGLN(F("Audio finished"));
             audioFinished = true;
             // Auto next functionality
-            if (audioAutoNext) { // moveAudio loops back to beginning?
+            if (audioAutoNext) {
                 moveAudio(true);
             }
         }

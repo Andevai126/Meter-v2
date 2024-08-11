@@ -1,4 +1,4 @@
-#define VERBOSE 1 // 0
+#define VERBOSE 1 // 0 or 1
 
 #if VERBOSE==1
     #define DEBUG(x) Serial.print(x)
@@ -14,6 +14,7 @@
 
 #include "simSetup.hpp"
 #include "pref.hpp"
+#include "random.hpp"
 #include "music.hpp"
 #include "leds.hpp"
 #include "commands.hpp"
@@ -29,7 +30,7 @@ void setup() {
         Serial.begin(9600);
     }
 
-    DEBUGLN("\n\n--- Starting setup! ---");
+    DEBUGLN(F("\n\n--- Starting setup! ---"));
     
     // Setup SIM7070G and start communication 
     simSetup();
@@ -37,13 +38,16 @@ void setup() {
     // Setup preferences database
     prefSetup();
 
+    // Setup RNG
+    randomSetup();
+
     // Setup DAC Amp and start communication
     musicSetup();
 
     // Setup leds
     ledsSetup();
 
-    DEBUGLN("\n--- Ready! ---\n");
+    DEBUGLN(F("\n--- Ready! ---\n\n"));
 
     // Show setup is complete
     patterns[SPIRAL].input = 1;
@@ -65,10 +69,12 @@ void loop() {
 }
 
 // --- TODO (options/ideas) ---
-// Text to speach (tts) - upgrade
-// autoNext loops?
+// Text to speach (tts) - upgrade (english and dutch folder? select language?)
+// autoNext loops?  // moveAudio loops back to beginning?
 // GPS implementation
 // Shuffle !
+// write fun stuff to sd?
+// Maybe create a random function for the 5 countdown titles so it picks one of the 5
 
 // Power saving and sleep modes
 

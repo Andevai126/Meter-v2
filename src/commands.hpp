@@ -35,6 +35,7 @@ void runAutonext(char* message);
 void runPrevious(char* message);
 void runEmpty(char* message);
 void runVolume(char* message);
+void runShuffle(char* message);
 
 void runTTS(char* message);
 void runFFT(char* message);
@@ -76,6 +77,7 @@ static commandType commands[] = {
     {"Previous", &runPrevious,  ALLOW_WHITELIST},
     {"Empty", &runEmpty,        ALLOW_WHITELIST},
     {"Volume", &runVolume,      ALLOW_WHITELIST},
+    {"Shuffle", &runShuffle,    ALLOW_WHITELIST},
 
     {"TTS", &runTTS,            ALLOW_WHITELIST},
     {"FFT", &runFFT,            ALLOW_WHITELIST}, 
@@ -215,7 +217,7 @@ void runCountdown(char* message) {
             playAudio(filter.c_str());
             DEBUGF("Playing %s\n", filter.c_str());
         } else {
-            DEBUGLN("No compatible audio found for given time duration");
+            DEBUGLN(F("No compatible audio found for given time duration"));
         }
     }   
 }
@@ -239,7 +241,7 @@ void runStop(char* message) {
 //Plays audio. Either all mp3 or specified by 'filter'
 void runPlay(char* message) {
     if (strlen(message) <= strlen("Play ")) {
-        DEBUGLN("No filter specified");
+        DEBUGLN(F("No filter specified"));
         // Start playing song at playerIndex
         moveAudio(true, 0);
     } else {
@@ -251,7 +253,7 @@ void runPlay(char* message) {
 //Adds audio specified by filter to end of queue
 void runQ(char* message) {
     if (strlen(message) <= strlen("Q ")) { // If there is no argument, do nothing
-        DEBUGLN("No filter specified");
+        DEBUGLN(F("No filter specified"));
     } else {
         DEBUGF("Filter specified: <%s>\n", message+strlen("Q "));
         queueAudio((char*)(message+strlen("Q ")));
@@ -266,7 +268,7 @@ void runPause(char* message) {
 // Go to next audio file
 void runNext(char* message) {
     if (strlen(message) <= strlen("Next ")) {
-        DEBUGLN("No argument specified");
+        DEBUGLN(F("No argument specified"));
         moveAudio(true);
     } else {
         DEBUGF("Number specified: <%s>\n", message+strlen("Next "));
@@ -294,17 +296,17 @@ void runAutonext(char* message) {
     // Multiple options are allowed
     if (arg.indexOf("y") != -1 || arg.indexOf("Y") != -1 || arg.indexOf("t") != -1 || arg.indexOf("T") != -1) {
         setAutoNext(true);
-        DEBUGLN("Changed Autonext to: true");
+        DEBUGLN(F("Changed Autonext to: true"));
     } else if (arg.indexOf("n") != -1 || arg.indexOf("N") != -1 || arg.indexOf("f") != -1 || arg.indexOf("F") != -1) {
         setAutoNext(false);
-        DEBUGLN("Changed Autonext to: false");
+        DEBUGLN(F("Changed Autonext to: false"));
     }    
 }
 
 // Go to previous audio file
 void runPrevious(char* message) {
     if (strlen(message) <= strlen("Previous ")) {
-        DEBUGLN("No argument specified");
+        DEBUGLN(F("No argument specified"));
         moveAudio(false);
     } else {
         DEBUGF("Number specified: <%s>\n", message+strlen("Previous "));
@@ -341,9 +343,16 @@ void runVolume(char* message) {
     }
 }
 
+// Shuffle titles
+void runShuffle(char* message) {
+    // TODO
+    // shuffleQueue();
+}
+
+
 void runTTS(char* message) {
     if (strlen(message) <= strlen("TTS ")) { // If there is no argument, do nothing
-        DEBUGLN("No words specified");
+        DEBUGLN(F("No words specified"));
     } else {
         DEBUGF("Words specified: <%s>\n", message+strlen("TTS "));
         playTTS((char*)(message+strlen("TTS ")));
@@ -355,10 +364,10 @@ void runFFT(char* message) {
     // Get argument and convert to String for ease of comparison
     String arg = message+strlen("FFT ");
     if (strlen(message) <= strlen("FFT ")) { // No filter, just turn FFT on
-        DEBUGLN("No filter specified");
+        DEBUGLN(F("No filter specified"));
         patterns[VUMETER].running = true;
     } else if (arg.indexOf("off") != -1 || arg.indexOf("Off") != -1) { // Off filter, turn FFT off
-        DEBUGLN("Off filter detected: reset patterns");
+        DEBUGLN(F("Off filter detected: reset patterns"));
         resetPatterns();
     } else {
         DEBUGF("Filter specified: <%s>\n", message+strlen("FFT ")); // Filter present, turn FFT on and play Audio
@@ -378,13 +387,13 @@ void runClear(char* message) {
 
 void printPos(char* message) {
     // Turn on GNSS receiver
-    DEBUGLN(sendAT("AT+CGNSPWR=1"));
+    DEBUGLN(sendAT(F("AT+CGNSPWR=1")));
 
     // Get data, check for 30sec for GNSS run status to be on
     unsigned long currentTime = millis();
     String response = "";
     do {
-        response = sendAT("AT+CGNSINF");
+        response = sendAT(F("AT+CGNSINF"));
         DEBUGLN(response);
         delay(3000);
     } while (*(char*)(response.c_str()+response.indexOf(":")+2) == '0' && millis() - currentTime < 30000);
@@ -392,7 +401,7 @@ void printPos(char* message) {
     DEBUGF("Time passed: %d\n", millis() - currentTime);
     
     // Reset
-    DEBUGLN(sendAT("AT+CGNSPWR=0"));
+    DEBUGLN(sendAT(F("AT+CGNSPWR=0")));
     DEBUGLN(sendAT(F("AT+CFUN=1,1")));
     readySim();
 }
