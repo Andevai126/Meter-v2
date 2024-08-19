@@ -18,13 +18,15 @@ void shuffleIntArray(int* array, int size) {
 }
 
 // Can't use std::shuffle, because it can't handle VLA's
+// Can't use std::swap, because it can't handle Strings
 void customShuffleStringArray(String* array, int size) {
     for (int i = size - 1; i > 0; --i) {
         int j = rand() % (i + 1);
-        std::swap(array[i], array[j]);
+        String temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
     }
 }
-
 
 // int randomGen(int size) {
 //     return std::rand() % size;

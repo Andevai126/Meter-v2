@@ -52,6 +52,10 @@ void setup() {
     // Show setup is complete
     patterns[SPIRAL].input = 1;
     patterns[SPIRAL].running = true;
+
+    playTTS("setup complete");
+    // Set volume to 20% after reboot (as starting value)
+    setVolume(0.20);
 }
 
 void loop() {
@@ -69,15 +73,18 @@ void loop() {
 }
 
 // --- TODO (options/ideas) ---
-// Text to speach (tts) - upgrade (english and dutch folder? select language?)
-// GPS implementation
-// write fun stuff to sd?
-// Maybe create a random function for the 5 countdown titles so it picks one of the 5
-// Ctrl+Shift+F with 'TODO'
-
 // Power saving and sleep modes
+
 
 // -Hardware-
 // Casing
 // Solarpanel
 // Wireless charger
+
+
+
+// Very very optional
+// 3 q files waar je alleen hoeft te appenden/poppen (als in een stack)
+    // 1: q_history (deze muziek is al afgespeeld/geskipped)
+    // 2: q_play (deze lijst wordt gemaakt met de Play <filter> command (wordt wellicht reverse opgeslagen)
+    // 3: q_long (deze lijst wordt geappend met de Q <filter> functie

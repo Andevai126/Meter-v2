@@ -1,3 +1,5 @@
+#include <map>
+
 // FastLED, by Daniel Garcia, v3.6.0
 // https://github.com/FastLED/FastLED
 
@@ -41,6 +43,7 @@ unsigned long timeToWait = 0;
 #define DISCO 		5
 #define DANGER 		6
 #define VUMETER		7
+#define MORSECODE   8
 
 // Define content of a pattern
 typedef struct {
@@ -58,6 +61,7 @@ bool battery(int percentage); //Not implemented
 bool disco(int givenTime); 
 bool danger(int givenTime); 
 bool vumeter(int notUsed);
+bool morsecode(int notUsed);
 
 // Array of all patterns and specifications
 patternType patterns[] = {
@@ -68,7 +72,8 @@ patternType patterns[] = {
 	{false, &battery, 0},
 	{false, &disco, 0},
 	{false, &danger, 0},
-	{false, &vumeter, 0}
+	{false, &vumeter, 0},
+	{false, &morsecode, 0},
 };
 static int nPatterns = sizeof(patterns) / sizeof(patternType);
 
@@ -654,7 +659,7 @@ typedef struct {
 bandType bands[NUM_CIRCLES] = {0,0,0,0};
 
 bool vumeter(int notUsed) {
-	if (!audioFinished && !audioPaused) {
+	if (!audioPaused) {
 		// Acquire fft from sound
 		float* result = fft.magnitudes();
 		float* ptr = result;
@@ -745,7 +750,6 @@ bool vumeter(int notUsed) {
 	} else {
 		FastLED.clear(true); // reset all led data (leds are off)
 		DEBUGLN(F("FFT lights function ended"));
-		DEBUGF("audioFinished: %d\n", audioFinished);
 		DEBUGF("audioPaused: %d\n", audioPaused);
 		return true;
 	}	
@@ -774,4 +778,126 @@ void colorPeakFFT(int band, int peakHeight) {
 		CHSV color = CHSV(band * (255 / NUM_CIRCLES), 110, 255);
 		leds[band*NUM_LEDS_PER_CIRCLE+peakHeight] = color;
 	}
+}
+
+String morseCodeSentence;
+
+std::map<char, String> morseCodeMap = {
+    {'a', ".-"},    {'b', "-..."},  {'c', "-.-."},  {'d', "-.."},
+    {'e', "."},     {'f', "..-."},  {'g', "--."},   {'h', "...."},
+    {'i', ".."},    {'j', ".---"},  {'k', "-.-"},   {'l', ".-.."},
+    {'m', "--"},    {'n', "-."},    {'o', "---"},   {'p', ".--."},
+    {'q', "--.-"},  {'r', ".-."},   {'s', "..."},   {'t', "-"},
+    {'u', "..-"},   {'v', "...-"},  {'w', ".--"},   {'x', "-..-"},
+    {'y', "-.--"},  {'z', "--.."},
+
+    {'1', ".----"}, {'2', "..---"}, {'3', "...--"}, {'4', "....-"},
+    {'5', "....."}, {'6', "-...."}, {'7', "--..."}, {'8', "---.."},
+    {'9', "----."}, {'0', "-----"},
+
+    {'.', ".-.-.-"},
+    {',', "--..--"},
+    {'?', "..--.."},
+    {'\'', ".----."},
+    {'!', "-.-.--"},
+    {'/', "-..-."},
+    {'(', "-.--."},
+    {')', "-.--.-"},
+    {'&', ".-..."},
+    {':', "---..."},
+    {';', "-.-.-."},
+    {'=', "-...-"},
+    {'+', ".-.-."},
+    {'-', "-....-"},
+    {'_', "..--.-"},
+    {'"', ".-..-."},
+    {'$', "...-..-"},
+    {'@', ".--.-."},
+
+    {' ', " "}
+};
+
+String charToMorseCode(char character){
+    if (morseCodeMap.find(tolower(character)) != morseCodeMap.end()) {
+        return morseCodeMap[tolower(character)];
+    }
+    return "";
+}
+
+std::map<char, int> charToDelay = {
+    {'|', 1}, // Delay between dots and dashes
+    {'_', 3}, // Delay between characters
+    {' ', 7}, // Delay between words
+    {'.', 1},
+    {'-', 3},
+};
+
+bool morsecode(int notUsed) {
+    static int timeUnit = 100; // sms
+    static String morseCode;
+    static int index;
+
+    // First time this function is called
+    if (recordedTime == 0) {
+        recordedTime = millis();
+        timeToWait = 0;
+        FastLED.setBrightness(10);
+
+        // Convert sentence to morse code
+        morseCode = "";
+        for (int i = 0; i < morseCodeSentence.length(); i++) {
+            String morseChar = charToMorseCode(morseCodeSentence[i]);
+            for (int j = 0; j < morseChar.length(); j++) {
+                morseCode += morseChar[j];
+                // Intra-character gap
+                if (j != morseChar.length()-1) {
+                    morseCode += "|";
+                }
+            }
+
+            // Inter-character gap
+            if (i != morseCodeSentence.length()-1 && (morseCodeSentence[i] != ' ' && morseCodeSentence[i+1] != ' ')) {
+                morseCode += "_";
+            }
+        }
+
+        // Reset just to be sure
+        index = 0;
+
+        // Some checks
+        DEBUGLN(morseCode);
+        DEBUGLN(morseCode.length());
+    }
+
+    // Wait
+    if (millis() < recordedTime+timeToWait) {
+        return false;
+    } else {
+        recordedTime = millis();
+        timeToWait = 0;
+    }
+
+    // Function has ended
+    if (index >= morseCode.length()) {
+        recordedTime = 0;
+        FastLED.clear(true); // reset all led data (leds are off)
+        DEBUGLN(F("Morsecode function ended"));
+        return true;
+    }
+
+    FastLED.clear();
+
+    // Turn leds on if dash or dot
+    if (morseCode[index] == '.' || morseCode[index] == '-') {
+        for (int i=0; i < NUM_CIRCLES; i++){ 
+            for (int k = 0; k < NUM_LEDS_PER_CIRCLE; k++) { // Red
+                leds[i*NUM_LEDS_PER_CIRCLE+k] = CRGB(255, 0, 0);
+            }
+        }
+    }
+
+    // Delay
+    timeToWait = charToDelay[morseCode[index++]]*timeUnit;
+    FastLED.show();
+    return false;
 }

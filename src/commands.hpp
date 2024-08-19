@@ -21,6 +21,7 @@ void runSpiral(char* message);
 void runRoulette(char* message);
 void runBattery(char* message);
 void runDisco(char* message);
+void runMorse(char* message);
 
 void runCountdown(char* message);
 void runDanger(char* message);
@@ -37,7 +38,8 @@ void runEmpty(char* message);
 void runVolume(char* message);
 void runShuffle(char* message);
 
-void runTTS(char* message);
+void runNL(char* message);
+void runEN(char* message);
 void runFFT(char* message);
 
 void runClear(char* message);
@@ -62,6 +64,7 @@ static commandType commands[] = {
     {"Roulette", &runRoulette,  ALLOW_WHITELIST},
     {"Battery", &runBattery,    ALLOW_ADMIN},
     {"Disco", &runDisco,        ALLOW_WHITELIST},
+    {"Morse", &runMorse,        ALLOW_ALL},
 
     {"Countdown", &runCountdown,ALLOW_WHITELIST},
     {"Danger", &runDanger,      ALLOW_WHITELIST},
@@ -79,7 +82,8 @@ static commandType commands[] = {
     {"Volume", &runVolume,      ALLOW_WHITELIST},
     {"Shuffle", &runShuffle,    ALLOW_WHITELIST},
 
-    {"TTS", &runTTS,            ALLOW_WHITELIST},
+    {"NL", &runNL,              ALLOW_WHITELIST},
+    {"EN", &runEN,              ALLOW_WHITELIST},
     {"FFT", &runFFT,            ALLOW_WHITELIST}, 
     
     // Forced resets
@@ -90,6 +94,23 @@ static commandType commands[] = {
 };
 static int nCommands = sizeof(commands) / sizeof(commandType);
 
+
+// Helper function
+String ones[] = {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
+String teens[] = {"ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"};
+String tens[] = {"", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"};
+String nameForNumber(int number) {
+    if (number < 10) {
+        return ones[number];
+    } else if (number < 20) {
+        return teens[number - 10];
+    } else if (number < 100) {
+        return tens[number / 10] + ((number % 10 != 0) ? " " + nameForNumber(number % 10) : "");
+    } else if (number < 1000) {
+        return nameForNumber(number / 100) + " hundred" + ((number % 100 != 0) ? " " + nameForNumber(number % 100) : "");
+    }
+    return "";
+}
 
 // Functions Yay!
 
@@ -189,11 +210,21 @@ void runBattery(char* message) {
     resetPatterns();
     patterns[BATTERY].input = percentage;
     patterns[BATTERY].running = true;
-    // nutt.say((double)percentage, "%"); TODO
+    String txt = "the battery level is ";
+    txt += nameForNumber(percentage);
+    txt += " percent";
+    setTtsLanguage();
+    playTTS((char*)(txt.c_str()));
 }
 
 void runDisco(char* message) {
     startPattern(message+strlen("Disco "), DISCO);
+}
+
+void runMorse(char* message) {
+    resetPatterns();
+    patterns[MORSECODE].running = true;
+    morseCodeSentence = message+strlen("Morse ");
 }
 
 void runCountdown(char* message) {
@@ -346,12 +377,23 @@ void runShuffle(char* message) {
 }
 
 
-void runTTS(char* message) {
-    if (strlen(message) <= strlen("TTS ")) { // If there is no argument, do nothing
+void runNL(char* message) {
+    if (strlen(message) <= strlen("NL ")) {
         DEBUGLN(F("No words specified"));
     } else {
-        DEBUGF("Words specified: <%s>\n", message+strlen("TTS "));
-        playTTS((char*)(message+strlen("TTS ")));
+        setTtsLanguage("Dutch");
+        DEBUGF("Words specified: <%s>\n", message+strlen("NL "));
+        playTTS((char*)(message+strlen("NL ")));
+    }
+}
+
+void runEN(char* message) {
+    if (strlen(message) <= strlen("EN ")) {
+        DEBUGLN(F("No words specified"));
+    } else {
+        setTtsLanguage("English");
+        DEBUGF("Words specified: <%s>\n", message+strlen("EN "));
+        playTTS((char*)(message+strlen("EN ")));
     }
 }
 
@@ -385,19 +427,67 @@ void printPos(char* message) {
     // Turn on GNSS receiver
     DEBUGLN(sendAT(F("AT+CGNSPWR=1")));
 
-    // Get data, check for 30sec for GNSS run status to be on
+    // Get data, aka try to get 'GNSS run status' to turn on (for max 30sec)
     unsigned long currentTime = millis();
     String response = "";
+    bool turnedOn = false;
     do {
+        DEBUGLN(F("Searching GPS connection..."));
         response = sendAT(F("AT+CGNSINF"));
-        DEBUGLN(response);
+        turnedOn = *(char*)(response.c_str()+response.indexOf(":")+2) != '0';
         delay(3000);
-    } while (*(char*)(response.c_str()+response.indexOf(":")+2) == '0' && millis() - currentTime < 30000);
+    } while (!turnedOn && millis() - currentTime < 30000);
 
+    // Info about connection
     DEBUGF("Time passed: %d\n", millis() - currentTime);
-    
+    DEBUGF("Connection: %s\n", (turnedOn ? "Success!" : "Failed") );
+    DEBUGLN(F("Please wait for reset"));
+
     // Reset
     DEBUGLN(sendAT(F("AT+CGNSPWR=0")));
     DEBUGLN(sendAT(F("AT+CFUN=1,1")));
     readySim();
+
+    // Show results
+    if (turnedOn) {
+        // Print info
+        DEBUGLN(response);
+        float latitude = getATarg<float>(response, 3);
+        float longitude = getATarg<float>(response, 4);
+        DEBUGF("lat:   %f\n", latitude);
+        DEBUGF("lon:   %f\n", longitude);
+
+        // Prepare TTS
+        setTtsLanguage();
+        String text = "the coordinates are ";
+
+        // Parse latitude
+        text += "latitude ";
+        if (latitude < 0) {
+            text += "minus ";
+            latitude *= -1;
+        }
+        text += nameForNumber((int)latitude);
+        text += " dot ";
+        int latitudeDec = (latitude-(int)latitude)*100;
+        text += nameForNumber(latitudeDec);
+
+        text +=" and ";
+
+        // Parse longitude
+        text += "longitude ";
+        if (longitude < 0) {
+            text += "minus ";
+            longitude *= -1;
+        }
+        text += nameForNumber((int)longitude);
+        text += " dot ";
+        int longitudeDec = (longitude-(int)longitude)*100;
+        text += nameForNumber(longitudeDec);
+
+        // Play combined text
+        playTTS((char*)(text.c_str()));
+    } else {
+        DEBUGLN(F("Could not get GPS connection"));
+    }
 }
