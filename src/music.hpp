@@ -62,6 +62,7 @@ static int nTtsLanguageOptions = sizeof(ttsLanguageOptions) / sizeof(ttsLanguage
 I2SConfig cfg;
 
 void searchDirectory(File32 dir, String prepend);
+void setTtsLanguage(String language = "English");
 void playTTS(const char* words);
 
 // Setup DAC Amp and start communication
@@ -525,7 +526,7 @@ bool isStringInArray(String& target, String arr[], int size) {
     return false;
 }
 
-void setTtsLanguage(String language = "English") {
+void setTtsLanguage(String language) {
     if (isStringInArray(language, ttsLanguageOptions, nTtsLanguageOptions)) {
         ttsLanguage = language;
     }
