@@ -54,8 +54,6 @@ void setup() {
     patterns[SPIRAL].running = true;
 
     playTTS("setup complete");
-    // Set volume to 20% after reboot (as starting value)
-    setVolume(0.20);
 }
 
 void loop() {

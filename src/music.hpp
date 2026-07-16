@@ -62,6 +62,7 @@ static int nTtsLanguageOptions = sizeof(ttsLanguageOptions) / sizeof(ttsLanguage
 I2SConfig cfg;
 
 void searchDirectory(File32 dir, String prepend);
+void setVolume(float scaler);
 void setTtsLanguage(String language = "English");
 void playTTS(const char* words);
 
@@ -133,8 +134,9 @@ void musicSetup() {
 
     // Setup volume
     auto volumeConfig = volume.defaultConfig();
-    // volumeConfig.allow_boost = true; (changed headerfile VolumeStream.h line:19)
     volume.begin(volumeConfig);
+    // Set volume to 20% after reboot (as starting value)
+    setVolume(0.20);
 
     // Add i2s to multi_output
     multi_output.add(i2s);
