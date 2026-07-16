@@ -2,19 +2,22 @@
 
 ## Sim card
 
-Vodafone has free prepaid, free delivery sim cards.
+Vodafone offers free prepaid SIM cards with free delivery. They stay active for 6 months without any outgoing activity.
 
 ## Installation
 
-- Install platformio extension in VSC.
+- Install the PlatformIO extension in VSC.
 - Everything should setup automatically.
 - If intelhex is missing, install like `.platformio\penv\Scripts\python.exe -m pip install intelhex`.
 - In `audio-tools/src/AudioTools/VolumeStream.h`, `line 19`, set ``volumeConfig.allow_boost`` to `true`.
-- To upload, start holding the power button already before uploading starts, and keep holding it until finished.
+- To upload, start holding the power button already before uploading starts, and keep holding it until is finished.
 
 ## Commands
 
-Commands can be found in the Excel file and can be sent via serial (baud 9600, no line ending, for example: `com Now`) or SMS.
+Commands can be found in the Excel file and can be sent via:
+
+- Serial: install the Serial Monitor extension in VSC, set baudrate to `9600`, set line ending to `None`. Send for example  `com Now`.
+- SMS: `Now`
 
 ## Available components
 
